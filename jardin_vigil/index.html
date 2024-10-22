@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jardín Constancio C. Vigil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playwrite+IT+Moderna:wght@100..400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playwrite+MX:wght@100..400&family=Playwrite+NZ:wght@100..400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<style>
+    /* Estilo para el contenedor de noticias */
+    #scrollNoticias {
+        display: flex;
+        overflow: hidden;
+        flex-wrap: nowrap;
+        scroll-behavior: smooth;
+        padding: 0 70px; /* Espacio para las flechas */
+        gap: 20px; /* Espacio entre las tarjetas */
+    }
+
+    /* Estilo para las flechas */
+    .btn-scroll {
+        background-color: #ffffff; /* Fondo blanco */
+        border: 1px solid #ddd; /* Borde gris claro */
+        color: #333; /* Color del ícono */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+        transition: background-color 0.3s, border-color 0.3s; /* Transición suave */
+    }
+
+    /* Estilo para las flechas cuando están en foco o se les pasa el ratón */
+    .btn-scroll:hover,
+    .btn-scroll:focus {
+        background-color: #f8f9fa; /* Fondo gris claro en hover */
+        border-color: #bbb; /* Borde gris más oscuro en hover */
+        color: #000; /* Color del ícono en hover */
+        outline: none; /* Quitar el contorno predeterminado del navegador */
+    }
+
+    /* Estilo para las flechas */
+    .btn-scroll-rounded {
+        border-radius: 50%; /* Botón redondeado */
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1000;
+    }
+
+    #flechaIzquierda {
+        left: 20px;
+    }
+
+    #flechaDerecha {
+        right: 20px;
+    }
+
+</style>
+
+<body>
+    <script>
+        const idSalitaActual = Number(localStorage.getItem('idSalitaActual')); 
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM completamente cargado y analizado");
+            try {
+                console.log("Intentando obtener las salitas desde el servidor...");
+                const salitas = await obtenerSalitas();
+                console.log("Salitas obtenidas:", salitas);
+                const menu = document.querySelector('.dropdown-menu');
+                salitas.forEach(salita => {
+                    if (salita.estado === "Activa") {
+                        const item = document.createElement('li');
+                        const button = document.createElement('button');
+                        button.className = 'dropdown-item';
+                        button.textContent = `Salita ${salita.nombre_salita}`;
+                        button.onclick = () => {
+                            console.log(`Botón para salita ${salita.nombre_salita} (ID: ${salita.id_salita}) clickeado.`);
+                            localStorage.setItem('idSalitaActual', salita.id_salita); 
+                            window.location.href = `salitas.html?id=${salita.id_salita}`;
+                        };
+                        item.appendChild(button);
+                        menu.appendChild(item);
+                        const divider = document.createElement('li');
+                        divider.innerHTML = '<hr class="dropdown-divider">';
+                        menu.appendChild(divider);
+                    }
+                });
+                
+                    console.log("No hay salita guardada, cargando la primera salita disponible.");
+                    
+            } catch (error) {
+                console.error('Error al cargar las salitas:', error);
+            }
+        });
+    </script>
+
+
+    <header>
+        <div class="container">
+            <div class="row mt-4 mb-5 align-items-center">
+                <div class="col-auto">
+                    <img src="img/logo.jpg" style="width: 65px; transform: scale(1.5); border-radius: 50px;">
+                </div>
+                <div class="col">
+                    <h4 class="mt-2 header-title">Jardín Constancio C. Vigil</h4>
+                </div>
+                <div class="col-auto">
+                    <div class="d-flex align-items-center">
+                        <div class="btn-group">
+                            <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                Salitas
+                            </button>
+                            <ul class="dropdown-menu" id="menuSalitas">
+
+                            </ul>
+                        </div>
+                        <a class="btn mx-2" href="#noticias">Noticias</a>
+                        <a class="btn mx-2" href="login.html" id="go_login">Login</a>
+                        <a class="a-header mx-2" href="https://www.instagram.com/jardin901sanclemente/" target="_blank">
+                            <img src="img/instagram (1).png" width="40px">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid p-0">
+        <img src="img/foto kindergarten.jpg" class="img-fluid" alt="Imagen del jardín">
+    </div>
+
+    <main>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const goLoginButton = document.getElementById('go_login');
+                if (goLoginButton) {
+                    goLoginButton.addEventListener('click', async (event) => {
+                        event.preventDefault();
+                        const result = await Swal.fire({
+                            title: '¡Atención!',
+                            text: 'Estás a punto de ingresar al sistema de login solo para Empleados.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Continuar',
+                            cancelButtonText: 'Cancelar'
+                        });
+                        if (result.isConfirmed) {
+                            window.location.href = 'login.html';
+                        }
+                    });
+                } else {
+                    console.error('No se encontró el botón con la id: go_login');
+                }
+            });
+        </script>
+
+
+<div class="container">
+    <h3 class="mt-3" id="noticias">Noticias</h3>
+    <div class="position-relative">
+        <!-- Contenedor de Noticias con scroll horizontal -->
+        <div id="scrollNoticias" class="d-flex overflow-hidden" style="flex-wrap: nowrap; scroll-behavior: smooth; padding: 0 70px; gap: 20px;">
+            <!-- Las noticias se insertarán aquí dinámicamente -->
+        </div>
+
+        <!-- Flecha Izquierda -->
+        <button id="flechaIzquierda" class="btn-scroll btn btn-light rounded-circle position-absolute top-50 translate-middle-y" style="left: 20px; z-index: 1000; width: 50px; height: 50px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); display: block;">
+            <i class="fas fa-chevron-left" style="font-size: 24px;"></i>
+        </button>
+
+        <!-- Flecha Derecha -->
+        <button id="flechaDerecha" class="btn-scroll btn btn-light rounded-circle position-absolute top-50 translate-middle-y" style="right: 20px; z-index: 1000; width: 50px; height: 50px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); display: block;">
+            <i class="fas fa-chevron-right" style="font-size: 24px;"></i>
+        </button>
+    </div>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="js/traer_noticias.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const noticias = await obtenerNoticias();
+                
+                if (noticias && Array.isArray(noticias) && noticias.length > 0) {
+                    // Ordenar noticias por fecha de publicación
+                    noticias.sort((a, b) => new Date(b.fecha_publicacion) - new Date(a.fecha_publicacion));
+
+                    const contenedorNoticias = document.getElementById('scrollNoticias');
+                    const maxNoticias = 3;
+
+                    // Mostrar solo las 3 más recientes
+                    const noticiasRecientes = noticias.slice(0, maxNoticias);
+                    const noticiasRestantes = noticias.slice(maxNoticias);
+
+                    // Función para crear tarjetas de noticias
+                    const crearTarjeta = (noticia, index) => {
+                        const tarjeta = document.createElement('div');
+                        tarjeta.className = 'col-md-4 mb-3 flex-shrink-0';
+                        tarjeta.style.width = `calc(100% / ${maxNoticias})`; // Ajuste exacto para mostrar 3 noticias
+                        tarjeta.innerHTML = `
+                            <div class="card h-100 shadow">
+                                <img class="card-img-top" src="${noticia.image_url}" alt="Imagen de noticia" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <p style="color: gray;" class="card-title">${noticia.fecha_publicacion}</p>
+                                    <h5 class="card-text">${noticia.titulo}</h5>
+                                    <p class="card-text">${noticia.resumen}</p>
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal${index}">
+                                        Ver más
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Modal -->
+                            <div class="modal fade" id="modal${index}" tabindex="-1" aria-labelledby="modal${index}Label" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modal${index}Label">${noticia.titulo}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <img src="${noticia.image_url}" class="img-fluid" alt="Imagen de noticia" style="height: 200px; object-fit: cover;">
+                                            <p class="mt-2">${noticia.contenido}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        return tarjeta;
+                    };
+
+                    // Insertar noticias recientes
+                    noticiasRecientes.forEach((noticia, index) => {
+                        contenedorNoticias.appendChild(crearTarjeta(noticia, index));
+                    });
+
+                    // Insertar noticias restantes
+                    noticiasRestantes.forEach((noticia, index) => {
+                        contenedorNoticias.appendChild(crearTarjeta(noticia, index + maxNoticias));
+                    });
+
+                    // Funcionalidad de scroll con flechas
+                    const scrollNoticias = document.getElementById('scrollNoticias');
+                    const flechaIzquierda = document.getElementById('flechaIzquierda');
+                    const flechaDerecha = document.getElementById('flechaDerecha');
+
+                    flechaIzquierda.addEventListener('click', () => {
+                        scrollNoticias.scrollBy({
+                            left: -scrollNoticias.clientWidth,
+                            behavior: 'smooth'
+                        });
+                    });
+
+                    flechaDerecha.addEventListener('click', () => {
+                        scrollNoticias.scrollBy({
+                            left: scrollNoticias.clientWidth,
+                            behavior: 'smooth'
+                        });
+                    });
+
+                } else {
+                    console.error('No se recibieron noticias válidas o no hay noticias para mostrar');
+                }
+            } catch (error) {
+                console.error('Error al cargar noticias:', error);
+            }
+        });
+    </script>
+</div>
+
+    </main>
+    <!-- Incluye FontAwesome para los iconos -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="js/traer_noticias.js"></script>
+    <!-- Función para manejar las reacciones -->
+    <script>
+        function toggleReaction(button) {
+            // Verificar si ya estaba activa
+            if (button.classList.contains('reaction-active')) {
+                button.classList.remove('reaction-active'); // Desactivamos si está activo
+            } else {
+                button.classList.add('reaction-active'); // Activamos si no lo está
+            }
+    
+            // Desactivar las otras reacciones si es necesario (una a la vez)
+            var siblingButtons = button.parentNode.querySelectorAll('.reaction-btn');
+            siblingButtons.forEach(function(btn) {
+                if (btn !== button) {
+                    btn.classList.remove('reaction-active');
+                }
+            });
+        }
+    </script>
+    
+    <!-- Estilos adicionales para las reacciones -->
+    <style>
+        .reaction-btn {
+            font-size: 16px;
+            color: #333;
+            border-radius: 30px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .reaction-btn i {
+            color: #ff6b6b;
+        }
+        .reaction-btn:hover {
+            background-color: #f0f0f0;
+        }
+        .reaction-active {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        .reaction-active i {
+            color: white;
+        }
+        .shadow {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    
+    <div class="container">
+        <h3 class="map-title">Ubicación de nuestro jardín</h3>
+        <div class="map-container">
+            <div id="map" style="height: 400px;"></div>
+        </div>
+    </div>
+    <footer class="bg-dark text-white text-center py-4 mt-5" style="opacity: 0.9;">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h5>Contacto</h5>
+                    <p>Teléfono: <a href="tel:+02252520417" class="text-white">02252520417</a></p>
+                    <p>Email: info@jardinconstanciocvigil.com</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Dirección</h5>
+                    <p>8 ENTRE 13 Y 14 2462, B7105 San Clemente del Tuyú, LA COSTA</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Síguenos</h5>
+                    <a href="https://www.facebook.com" class="text-white me-2" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.twitter.com" class="text-white me-2" target="_blank"><i class="fab fa-twitter"></i></a>
+                    <a href="https://www.instagram.com/jardin901sanclemente/" class="text-white" target="_blank"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <p>&copy; 2024 Jardín Constancio C. Vigil. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="RFZC58YeKApoNsIbBxf4z6JJXmh+geBSgkCQXFyh+4tiFSJmJBt+2FbjxW7Ar16M" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="VzLXTJGPSyTLX6d96AxgkKvE/LRb7ECGyTxuwtpjHnVWVZs2gp5RDjeM/tgBnVdM" crossorigin=""/>
+    <script>
+        function initMap() {
+            var map = L.map('map', {
+                center: [-36.36267358181221, -56.7238527896134], // Coordenadas de Santa Teresita, Argentina
+                zoom: 13,
+                zoomControl: true,
+                scrollWheelZoom: true,
+                dragging: true
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            var icono = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/4290/4290228.png', // URL del icono escolar
+                iconSize: [38, 38], // tamaño del icono
+                iconAnchor: [22, 38], // punto del icono que corresponderá a la posición del marcador
+                popupAnchor: [-3, -76] // punto desde el cual se abrirá el popup relativo al icono
+            });
+
+            var marker = L.marker([-36.36267358181221, -56.7238527896134], { icon: icono }).addTo(map)
+                .bindPopup('Ubicación de nuestro jardín, presione el botón para obtener la ruta')
+                .openPopup();
+
+            marker.on('click', function() {
+                var modalHtml = `
+                    <div class="modal fade" id="rutaModal" tabindex="-1" aria-labelledby="rutaModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="rutaModalLabel">Confirmación de Ruta</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ¿Desea obtener la ruta hacia el jardín en Google Maps?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="button" class="btn btn-primary" id="confirmarRuta">Obtener Ruta</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                var rutaModal = new bootstrap.Modal(document.getElementById('rutaModal'));
+                rutaModal.show();
+
+                document.getElementById('confirmarRuta').addEventListener('click', function() {
+                    window.open('https://www.google.com/maps/dir/?api=1&destination=-36.36267358181221,-56.7238527896134', '_blank');
+                });
+
+                document.getElementById('rutaModal').addEventListener('hidden.bs.modal', function() {
+                    document.getElementById('rutaModal').remove();
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+    <script src="js/traer_salitas.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

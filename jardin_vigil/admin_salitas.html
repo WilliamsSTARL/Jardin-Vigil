@@ -1,0 +1,470 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <script>
+        const idSalitaActual = Number(localStorage.getItem('idSalitaActual')); 
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM completamente cargado y analizado");
+            try {
+                console.log("Intentando obtener las salitas desde el servidor...");
+                const salitas = await obtenerSalitas();
+                console.log("Salitas obtenidas:", salitas);
+                const menu = document.querySelector('.dropdown-menu');
+                salitas.forEach(salita => {
+                    if (salita.estado === "Activa") {
+                        const item = document.createElement('li');
+                        const button = document.createElement('button');
+                        button.className = 'dropdown-item';
+                        button.textContent = `Salita ${salita.nombre_salita}`;
+                        button.onclick = () => {
+                            console.log(`Botón para salita ${salita.nombre_salita} (ID: ${salita.id_salita}) clickeado.`);
+                            localStorage.setItem('idSalitaActual', salita.id_salita); 
+                            window.location.href = `salitas.html?id=${salita.id_salita}`;
+                        };
+                        item.appendChild(button);
+                        menu.appendChild(item);
+                        const divider = document.createElement('li');
+                        divider.innerHTML = '<hr class="dropdown-divider">';
+                        menu.appendChild(divider);
+                    }
+                });
+                
+                    console.log("No hay salita guardada, cargando la primera salita disponible.");
+                    
+            } catch (error) {
+                console.error('Error al cargar las salitas:', error);
+            }
+        });
+    </script>
+    <div class="d-flex flex-row">
+        <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 280px; height: 100vh; background-color: #dcdfe2;border-radius: 10px;">
+            <a href="panel_control.html" class="d-block mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+                <div class="text-center mb-3">
+                    <span class="fs-4">Jardin Vigil</span>
+                </div>
+                <div class="text-center justify-content-center">
+                    <span class="fs-6 text-center justify-content-center" id="bienvenida"></span>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const nombre = localStorage.getItem('nombre');
+                        const apellido = localStorage.getItem('apellido');
+                        document.getElementById('bienvenida').textContent = `Bienvenido, ${nombre} ${apellido}`;
+                    });
+                </script>
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                   Ver Salitas
+                </button>
+                <ul class="dropdown-menu" id="menuSalitas">
+
+                </ul>
+
+            </div>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="panel_control.html" class="nav-link link-dark" aria-current="page">
+                        Usuarios
+                    </a>
+                </li>
+                <li>
+                    <a href="noticias.html" class="nav-link link-dark">
+                        Noticias
+                    </a>
+                </li>
+                <li>
+                    <a href="admin_salitas.html" class="nav-link active">
+                        Salitas
+                    </a>
+                </li>
+                <li>
+                    <a id="cerrar_sesion" class="nav-link link-dark">
+                         Cerrar Sesión
+                    </a>
+                </li>
+            </ul>
+
+        </div>
+        <div class="b-example-divider"></div>
+        <div class="p-3 flex-grow-1">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>Salitas</h1>
+            <button class="btn btn-primary" onclick="toggleModal()">Nueva Salita</button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Turno</th>
+                    <th>Estado</th>
+                    <th>Horarios</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-salitas">
+                <script>
+                    document.addEventListener('DOMContentLoaded', async () => {
+                        try {
+                            const salitas = await obtenerSalitas();
+                            if (salitas && Array.isArray(salitas)) {
+                                const tabla = document.getElementById('tabla-salitas');
+                                salitas.forEach(salita => {
+                                    const fila = document.createElement('tr');
+                                    fila.innerHTML = `
+                                        <td>${salita.id_salita}</td>
+                                        <td>${salita.nombre_salita}</td>
+                                        <td>${salita.turno_salita}</td>
+                                        <td>${salita.estado}</td>
+                                        <td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalHorario" data-id-salita="${salita.id_salita}">Horario</button></td>
+                                        <td>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalModificar" onclick="modificarSalita(${salita.id_salita})">Modificar</button>
+                                        <button type="button" class="btn btn-danger" onclick="eliminarSalita(${salita.id_salita})">Eliminar</button>
+                                        </td>
+                                    `;
+                                    tabla.appendChild(fila);
+                                });
+                            } else {
+                                console.error('No se recibieron datos válidos');
+                            }
+                        } catch (error) {
+                            console.error('Error al cargar salitas:', error);
+                        }
+                    });
+                </script>
+            </tbody>
+        </table>
+        <div class="modal fade" id="modalNuevaSalita" tabindex="-1" aria-labelledby="modalNuevaSalitaLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNuevaSalitaLabel">Nueva Salita</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formNuevaSalita">
+                            <div class="mb-3">
+                                <label for="nombre_salita" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="nombre_salita" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="turno_salita" class="form-label">Turno</label>
+                                <select class="form-select" id="turno_salita" required>
+                                    <option value="1">Mañana</option>
+                                    <option value="2">Tarde</option>
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary">Guardar Salita</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="modal fade" id="modalHorario" tabindex="-1" aria-labelledby="modalHorarioLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalHorarioLabel">Horarios</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="contenedorHorariosExistentes" style="display: none;">
+                            <ul id="listaHorarios" class="list-group mb-3">
+                                <!-- Los horarios existentes se insertarán aquí -->
+                            </ul>
+                        </div>
+                        <form id="formHorarios" data-id-salita="">
+                            <div class="mb-3">
+                                <label class="form-label">Día de la semana</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="todos" value="todos">
+                                    <label class="form-check-label" for="todos">Seleccionar Todos</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dia_semana1" value="1">
+                                    <label class="form-check-label" for="dia_semana1">Lunes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dia_semana2" value="2">
+                                    <label class="form-check-label" for="dia_semana2">Martes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dia_semana3" value="3">
+                                    <label class="form-check-label" for="dia_semana3">Miércoles</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dia_semana4" value="4">
+                                    <label class="form-check-label" for="dia_semana4">Jueves</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dia_semana5" value="5">
+                                    <label class="form-check-label" for="dia_semana5">Viernes</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="hora_inicio" class="form-label">Hora de inicio</label>
+                                    <input type="text" class="form-control" id="hora_inicio" placeholder="HH:MM" maxlength="5" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="hora_fin" class="form-label">Hora de fin</label>
+                                    <input type="text" class="form-control" id="hora_fin" placeholder="HH:MM" maxlength="5" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Guardar Horario</button>
+                            </div>
+                        </form>
+                        <button type="button" class="btn btn-primary" id="botonAgregarHorarios" style="display: none;">Agregar Nuevos Horarios</button>
+                        <button type="button" class="btn btn-secondary" id="botonVerHorarios" style="display: none;">Ver Horarios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            function toggleEditar(id) {
+                const inicioInput = document.getElementById('inicio_' + id);
+                const finInput = document.getElementById('fin_' + id);
+                const textoInicio = document.getElementById('texto_inicio_' + id);
+                const textoFin = document.getElementById('texto_fin_' + id);
+                const botonGuardar = document.querySelector(`button[onclick="modificarHorario(${id})"]`);
+
+                if (inicioInput.style.display === 'none') {
+                    inicioInput.style.display = '';
+                    finInput.style.display = '';
+                    textoInicio.style.display = 'none';
+                    textoFin.style.display = 'none';
+                    botonGuardar.style.display = '';
+                } else {
+                    inicioInput.style.display = 'none';
+                    finInput.style.display = 'none';
+                    textoInicio.style.display = '';
+                    textoFin.style.display = '';
+                    botonGuardar.style.display = 'none';
+                }
+            }
+
+            document.getElementById('modalHorario').addEventListener('show.bs.modal', async function (event) {
+                const button = event.relatedTarget;
+                const idSalita = button.getAttribute('data-id-salita');
+                const response = await fetch(`http://127.0.0.1:5000/traerHorarios?id_salita=${idSalita}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.horarios && data.horarios.length > 0) {
+                        const horarios = data.horarios;
+                        const listaHorarios = document.getElementById('listaHorarios');
+                        listaHorarios.innerHTML = '';
+                        horarios.forEach(horario => {
+                            const item = document.createElement('li');
+                            item.classList.add('list-group-item');
+                            item.innerHTML = `<div style="display: flex; align-items: center; justify-content: space-between;">
+                                                <div style="flex: 1;">Día ${horario.dia_semana}:</div>
+                                                <div style="flex: 2; display: flex">
+                                                    <div>
+                                                        <span id="texto_inicio_${horario.id_horario}">${horario.hora_inicio.slice(0, 5)}</span>
+                                                        <input type="text" id="inicio_${horario.id_horario}" value="${horario.hora_inicio.slice(0, 5)}" class="form-control mb-2" style="display:none;">
+                                                    </div>
+                                                    <span style="margin-left: 10px; margin-right: 10px;"> - </span>
+                                                    <div>
+                                                        <span id="texto_fin_${horario.id_horario}">${horario.hora_fin.slice(0, 5)}</span>
+                                                        <input type="text" id="fin_${horario.id_horario}" value="${horario.hora_fin.slice(0, 5)}" class="form-control mb-2" style="display:none;">
+                                                    </div>
+                                                </div>
+                                                <div style="flex: 0; display: flex; justify-content: flex-end; gap: 10px;">
+                                                    <button type="button" class="btn btn-primary" onclick="toggleEditar(${horario.id_horario})"><i class="bi bi-pencil-square"></i></button>
+                                                    <button type="button" class="btn btn-primary" onclick="modificarHorario(${horario.id_horario})" style="display:none;">Guardar</button>
+                                                </div>
+                                              </div>`;
+                            listaHorarios.appendChild(item);
+                        });
+                        document.getElementById('contenedorHorariosExistentes').style.display = '';
+                        document.getElementById('formHorarios').style.display = 'none';
+                        document.getElementById('botonAgregarHorarios').style.display = '';
+                        document.getElementById('botonVerHorarios').style.display = 'none';
+                    } else {
+                        document.getElementById('contenedorHorariosExistentes').style.display = 'none';
+                        document.getElementById('formHorarios').style.display = '';
+                        document.getElementById('botonAgregarHorarios').style.display = 'none';
+                        document.getElementById('botonVerHorarios').style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('contenedorHorariosExistentes').style.display = 'none';
+                    document.getElementById('formHorarios').style.display = '';
+                    document.getElementById('botonAgregarHorarios').style.display = 'none';
+                    document.getElementById('botonVerHorarios').style.display = 'none';
+                } 
+                document.getElementById('formHorarios').setAttribute('data-id-salita', idSalita);
+            });
+
+            document.getElementById('modalHorario').addEventListener('hidden.bs.modal', function () {
+                document.getElementById('listaHorarios').innerHTML = '';
+                document.getElementById('formHorarios').reset();
+                document.getElementById('contenedorHorariosExistentes').style.display = 'none';
+                document.getElementById('formHorarios').style.display = 'none';
+                document.getElementById('botonAgregarHorarios').style.display = '';
+                document.getElementById('botonVerHorarios').style.display = '';
+            });
+
+            document.getElementById('todos').addEventListener('change', function() {
+                let estado = this.checked;
+                ['dia_semana1', 'dia_semana2', 'dia_semana3', 'dia_semana4', 'dia_semana5'].forEach(function(dia) {
+                    document.getElementById(dia).checked = estado;
+                });
+            });
+
+            document.getElementById('botonAgregarHorarios').addEventListener('click', function() {
+                document.getElementById('contenedorHorariosExistentes').style.display = 'none';
+                document.getElementById('formHorarios').style.display = '';
+                this.style.display = 'none'; // Oculta el botón al mostrar el modal
+                document.getElementById('botonVerHorarios').style.display = '';
+            });
+
+            document.getElementById('botonVerHorarios').addEventListener('click', function() {
+                document.getElementById('contenedorHorariosExistentes').style.display = '';
+                document.getElementById('formHorarios').style.display = 'none';
+                document.getElementById('botonAgregarHorarios').style.display = '';
+                document.getElementById('botonVerHorarios').style.display = 'none';
+                $('#modalHorario').modal('hide');
+                setTimeout(function() {
+                    $('#modalHorario').modal('show');
+                }, 500);
+            });
+        </script>
+
+
+        <div class="modal fade" id="modalModificar" tabindex="-1" aria-labelledby="modalModificarLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalModificarLabel">Modificar Salita</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formModificarSalita">
+                            <div class="mb-3">
+                                <label for="modificarNombreSalita" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="modificarNombreSalita" placeholder="Nombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="modificarTurnoSalita" class="form-label">Turno</label>
+                                <select class="form-select" id="modificarTurnoSalita" required>
+                                    <option value="1">Mañana</option>
+                                    <option value="2">Tarde</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="modificarEstado" class="form-label">Estado</label>
+                                <select class="form-select" id="modificarEstado" required>
+                                    <option value="1">Activa</option>
+                                    <option value="2">Inactiva</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Actualizar Salita</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+</body>
+<script src="js/traer_salitas.js"></script>
+<script src="js/modificar_salita.js"></script>
+<script src="js/insertar_salita.js"></script>
+<script src="js/insertar_horarios.js"></script>
+<script src="js/modificar_horarios.js"></script>
+<script src="js/cerrar_sesion.js"></script>
+<script src="js/seguridad_logeado.js"></script>
+<script src="js/eliminar_salita.js"></script>
+<script src="js/control_administrativo.js"></script>
+
+<script>
+    document.getElementById('modalHorario').addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; 
+        const idSalita = button.getAttribute('data-id-salita');
+        document.getElementById('formHorarios').setAttribute('data-id-salita', idSalita);
+});
+</script>
+
+<script>
+    let salitas = [];
+    
+    async function modificarSalita(id_salita) {
+        const salita = salitas.find(s => s.id_salita === id_salita);
+        if (salita) {
+            document.getElementById("modificarNombreSalita").value = salita.nombre_salita || '';
+            const selectTurno = document.getElementById("modificarTurnoSalita");
+            const selectEstado = document.getElementById("modificarEstado");
+            for (let i = 0; i < selectTurno.options.length; i++) {
+                if (selectTurno.options[i].value === salita.turno_salita.toString()) {
+                    selectTurno.selectedIndex = i;
+                    break;
+                }
+            }
+            for (let i = 0; i < selectEstado.options.length; i++) {
+                if (selectEstado.options[i].value === salita.estado.toString()) {
+                    selectEstado.selectedIndex = i;
+                    break;
+                }
+            }
+            document.getElementById('formModificarSalita').setAttribute('data-id-salita', id_salita); 
+        } else {
+            console.error('Salita no encontrada');
+        }
+    }
+
+    const modal = document.getElementById('modalModificar');
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.getElementById("modificarNombreSalita").value = '';
+        document.getElementById("modificarTurnoSalita").selectedIndex = 0;
+        document.getElementById("modificarEstado").selectedIndex = 0;
+    });
+
+    document.addEventListener('click', function(event) {
+        if (event.target.matches('[data-bs-toggle="modal"]')) {
+            const id_salita = event.target.getAttribute('data-id');  
+            if (id_salita) {
+                modificarSalita(parseInt(id_salita, 10));  
+            }
+        }
+    });
+
+    window.onload = async function() {
+        salitas = await obtenerSalitas();
+        verificarSesion();
+        control_administrativo();
+    };
+</script>
+
+<script>
+document.getElementById('modalHorario').addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget; 
+    const idSalita = button.getAttribute('data-id-salita');
+    document.getElementById('formHorarios').setAttribute('data-id-salita', idSalita);
+});
+
+</script>
+
+<script>
+  function toggleModal() {
+    const modal = document.querySelector('#modalNuevaSalita');
+    const isShown = bootstrap.Modal.getInstance(modal);
+    if (isShown) {
+      bootstrap.Modal.getInstance(modal).hide();
+    } else {
+      new bootstrap.Modal(modal).show();
+    }
+  }
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+</html>
